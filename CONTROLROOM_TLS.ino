@@ -1,5 +1,4 @@
 // CONTROLROOM TLS-enabled sketch (abridged)
-// NOTE: MKR WiFiNINA TLS support is limited; this sketch shows pattern for WiFiSSLClient
 #include <SPI.h>
 #include <MFRC522.h>
 #include <WiFiNINA.h>
@@ -17,7 +16,7 @@
 
 char ssid[] = "Fairy";
 char pass[] = "1608z246<3";
-const char EDGE_HOST[] = "edge.example.com"; // use domain behind nginx+Let'sEncrypt
+const char EDGE_HOST[] = "edge.example.com";
 const uint16_t EDGE_PORT = 443;
 const char EDGE_API_KEY[] = "REPLACE_WITH_EDGE_API_KEY";
 
@@ -25,32 +24,30 @@ MFRC522 rfid(SS_PIN, RST_PIN);
 Servo doorServo;
 WiFiUDP ntpUDP; NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
-void sendTelemetryTLS(String json) {
+void ensureWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+  WiFi.begin(ssid, pass);
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) { delay(200); }
+}
+
+bool sendToEdgeTLS(String jsonPayload) {
+  ensureWiFi();
+  if (WiFi.status() != WL_CONNECTED) return false;
   WiFiSSLClient client;
-  if (!client.connect(EDGE_HOST, EDGE_PORT)) { Serial.println("TLS connect failed"); return; }
-  String req = "POST /ingest HTTP/1.1\r\nHost: " + String(EDGE_HOST) + "\r\n";
+  if (!client.connect(EDGE_HOST, EDGE_PORT)) return false;
+  String req = "POST /ingest HTTP/1.1\r\n";
+  req += "Host: " + String(EDGE_HOST) + "\r\n";
   req += "Authorization: Bearer " + String(EDGE_API_KEY) + "\r\n";
   req += "Content-Type: application/json\r\n";
-  req += "Content-Length: " + String(json.length()) + "\r\n";
+  req += "Content-Length: " + String(jsonPayload.length()) + "\r\n";
   req += "Connection: close\r\n\r\n";
-  req += json;
+  req += jsonPayload;
   client.print(req);
   unsigned long start = millis();
   while (!client.available() && millis() - start < 2000) delay(10);
-  while (client.available()) Serial.write(client.read());
+  String resp="";
+  while (client.available()) resp += (char)client.read();
   client.stop();
-}
-
-void setup() {
-  Serial.begin(115200);
-  WiFi.begin(ssid, pass);
-  unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000) { delay(500); Serial.print("."); }
-  timeClient.begin(); timeClient.update();
-}
-void loop() {
-  timeClient.update();
-  String j = "{\"device\":\"control_room\",\"ts\":" + String(timeClient.getEpochTime()) + ",\"vib\":" + String(analogRead(VIBRATION_PIN)) + "}";
-  sendTelemetryTLS(j);
-  delay(5000);
+  return true;
 }
