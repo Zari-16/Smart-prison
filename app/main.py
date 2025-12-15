@@ -5,9 +5,6 @@ Edge Ingest & Inference Service (FastAPI)
 - Buffers per-device windows, extracts features, runs ML (TFLite preferred)
 - Writes sensor summaries and ai_alerts to InfluxDB
 - Publishes alerts to MQTT over TLS
-
-Run: uvicorn main:app --host 0.0.0.0 --port 5000
-Configuration: ./config.yaml (mounted to /app/config.yaml)
 """
 import os, time, logging, yaml
 from fastapi import FastAPI, Request, Header, HTTPException
