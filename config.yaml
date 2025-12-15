@@ -13,7 +13,7 @@ mqtt:
   enabled: true
   host: "mosquitto"
   port: 8883
-  username: ""       # set if you need auth
+  username: ""
   password: ""
   topic_prefix: "smartprison"
   cafile: "/app/certs/ca.crt"
@@ -24,7 +24,3 @@ ml:
   tflite_model_path: "/app/models/autoencoder.tflite"
   anomaly_threshold: 0.6
   fallback_isolationforest: true
-
-security:
-  require_tls_client: false
-  token_rotation_days: 30
