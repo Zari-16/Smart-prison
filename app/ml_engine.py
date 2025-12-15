@@ -51,12 +51,10 @@ class MLEngine:
         self.tflite.invoke()
         out = self.tflite.get_tensor(output_details[0]['index'])
         # interpret out: if autoencoder returns reconstruction error or full reconstruction
-        # Strategy: if out is reconstruction, compute mse
         if out.shape == x.shape:
             mse = float(((x - out)**2).mean())
             return mse, self.model_version
         else:
-            # model returns score directly
             return float(out.flatten().mean()), self.model_version
 
     def score_window(self, feature_vec):
@@ -67,8 +65,7 @@ class MLEngine:
             except Exception as e:
                 print("[ML] tflite error:", e)
         if self.iforest is not None:
-            s = self.iforest.decision_function(feature_vec.reshape(1,-1))[0]  # higher -> normal
-            # map to anomaly-like score: invert and scale to 0..1
+            s = self.iforest.decision_function(feature_vec.reshape(1,-1))[0]
             score = float(1.0 - (s + 0.5))
             return score, self.model_version
         return 0.0, self.model_version
