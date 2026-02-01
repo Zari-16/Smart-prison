@@ -1,0 +1,26 @@
+server:
+  host: "0.0.0.0"
+  port: 5000
+  api_key: "REPLACE_WITH_EDGE_API_KEY"    # change immediately and keep secret
+
+influx:
+  url: "http://influxdb:8086"
+  token: "REPLACE_WITH_INFLUX_TOKEN"
+  org: "MDX"
+  bucket: "Prison_Data"
+
+mqtt:
+  enabled: true
+  host: "mosquitto"
+  port: 8883
+  username: ""
+  password: ""
+  topic_prefix: "smartprison"
+  cafile: "/app/certs/ca.crt"
+
+ml:
+  window_size: 12
+  sample_interval_s: 5
+  tflite_model_path: "/app/models/autoencoder.tflite"
+  anomaly_threshold: 0.6
+  fallback_isolationforest: true

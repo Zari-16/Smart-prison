@@ -1,0 +1,25 @@
+# edge/Dockerfile.pi
+# Build image for Raspberry Pi 5 (arm64)
+FROM --platform=linux/arm64 python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential libatlas-base-dev libsndfile1 libgomp1 ffmpeg \
+    libssl-dev libffi-dev wget ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements and install
+COPY requirements-pi.txt /app/requirements-pi.txt
+RUN pip install --no-cache-dir -r /app/requirements-pi.txt
+
+# Copy app code
+COPY app /app
+COPY config.yaml /app/config.yaml
+
+# Expose internal port (nginx terminates TLS)
+EXPOSE 5000
+
+# run uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
